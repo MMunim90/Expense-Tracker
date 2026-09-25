@@ -1,0 +1,72 @@
+{
+  "E001": {
+    "name": "Grocery Shopping",
+    "amount": 2500,
+    "category": "Food",
+    "date": "2026-09-01",
+    "description": "Monthly grocery shopping"
+  },
+  "E002": {
+    "name": "Electricity Bill",
+    "amount": 1850,
+    "category": "Bills",
+    "date": "2026-09-03",
+    "description": "Monthly electricity bill"
+  },
+  "E003": {
+    "name": "Internet Bill",
+    "amount": 1200,
+    "category": "Bills",
+    "date": "2026-09-05",
+    "description": "Home internet subscription"
+  },
+  "E004": {
+    "name": "Bus Fare",
+    "amount": 350,
+    "category": "Transport",
+    "date": "2026-09-07",
+    "description": "Daily transportation expenses"
+  },
+  "E005": {
+    "name": "Restaurant Dinner",
+    "amount": 1650,
+    "category": "Food",
+    "date": "2026-09-10",
+    "description": "Dinner with friends"
+  },
+  "E006": {
+    "name": "Programming Course",
+    "amount": 3000,
+    "category": "Education",
+    "date": "2026-09-12",
+    "description": "Online programming course fee"
+  },
+  "E007": {
+    "name": "Mobile Recharge",
+    "amount": 500,
+    "category": "Communication",
+    "date": "2026-09-15",
+    "description": "Monthly mobile recharge"
+  },
+  "E008": {
+    "name": "Medicine",
+    "amount": 850,
+    "category": "Healthcare",
+    "date": "2026-09-18",
+    "description": "Purchased basic medicines"
+  },
+  "E009": {
+    "name": "New Backpack",
+    "amount": 2200,
+    "category": "Shopping",
+    "date": "2026-09-20",
+    "description": "Bought a new backpack"
+  },
+  "E010": {
+    "name": "Coffee",
+    "amount": 280,
+    "category": "Food",
+    "date": "2026-09-23",
+    "description": "Coffee at a local cafe"
+  }
+}
