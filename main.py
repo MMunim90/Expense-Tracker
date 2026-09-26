@@ -25,3 +25,14 @@ def view_specific_expenses(expense_id: str = Path(..., description='Id of the ex
         return data[expense_id]
     else:
         raise HTTPException(status_code=404, detail="Expenses not found!!!")
+    
+    
+@app.get("/sort")
+def view_sorted_expenses(sorted_by: str, order: str):
+    data = load_data()
+    sorted_data = list(data.values())
+    if order == 'asc':
+        sorted_data.sort(key = lambda x: x[sorted_by])
+    else:
+        sorted_data.sort(key = lambda x: x[sorted_by], reverse=True)
+    return sorted_data
