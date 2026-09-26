@@ -55,5 +55,7 @@ def view_sorted_expenses(sorted_by: str, order: str):
 @app.post("/create")
 def create_expenses(expense: Expense):
     data = load_data()
+    if expense.id in data:
+        raise HTTPException(status_code=400, detail="Expense id already exists")
     data[expense.id] = expense.model_dump(exclude=['id'])
     save_data(data)
