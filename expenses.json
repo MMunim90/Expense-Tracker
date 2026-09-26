@@ -57,10 +57,10 @@
   },
   "E009": {
     "name": "New Backpack",
-    "amount": 2200,
+    "amount": 2300,
     "category": "Shopping",
     "date": "2026-09-20",
-    "description": "Bought a new backpack"
+    "description": "Bought a new backpack for sister"
   },
   "E010": {
     "name": "Coffee",
@@ -75,5 +75,12 @@
     "category": "Housing",
     "date": "2026-09-24",
     "description": "Monthly apartment rent"
+  },
+  "E012": {
+    "name": "Ride Sharing",
+    "amount": 680,
+    "category": "Transport",
+    "date": "2026-09-26",
+    "description": "Ride sharing fare"
   }
 }
