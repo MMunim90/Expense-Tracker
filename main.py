@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Path
 import json
 
 app = FastAPI()
@@ -19,6 +19,9 @@ def view_expenses():
     return data
 
 @app.get("/view/{expense_id}")
-def view_specific_expenses(expense_id: str):
+def view_specific_expenses(expense_id: str = Path(..., description='Id of the expenses', example='E001')):
     data = load_data()
-    return data[expense_id]
+    if expense_id in data:
+        return data[expense_id]
+    else:
+        raise HTTPException(status_code=404, detail="Expenses not found!!!")
