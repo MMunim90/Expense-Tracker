@@ -75,12 +75,5 @@
     "category": "Housing",
     "date": "2026-09-24",
     "description": "Monthly apartment rent"
-  },
-  "E012": {
-    "name": "Ride Sharing",
-    "amount": 680,
-    "category": "Transport",
-    "date": "2026-09-26",
-    "description": "Ride sharing fare"
   }
 }
