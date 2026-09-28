@@ -81,24 +81,35 @@ def view_sorted_expenses(sorted_by: str, order: str):
 
 
 @app.post("/create")
-def create_expenses(expense: Expense):
-    data = load_data()
-    if expense.id in data:
-        raise HTTPException(status_code=400, detail="Expense id already exists")
-    data[expense.id] = expense.model_dump(exclude=['id'])
-    save_data(data)
-    raise HTTPException(status_code=200, detail="Expense created successfully!!!")
+def create_expenses(user : user_dependency, db : db_dependency, expense: Expense):
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+
+    expense_model = Expense(**expense.model_dump(), owner_id = user.get('id'))
+    db.add(expense_model)
+    db.commit()
+
+    return JSONResponse(status_code=201, content={'message' : 'Expense created successfully'})
     
     
 
 @app.put("/edit-expenses/{expense_id}")
-def update_expenses(expense_id: int, expense: UpdateExpense):
-    data = load_data()
-    if expense_id not in data:
-        raise HTTPException(status_code=404, detail="Expense not found!!!")
-    data[expense_id].update(expense.model_dump(exclude_unset=True))
-    save_data(data)
-    raise HTTPException(status_code=200, detail="Expense updated successfully!!!")
+def update_expenses(user : user_dependency, db : db_dependency, expense_id: int, update_expense: UpdateExpense):
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+
+    expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+
+    if expense is None:
+        raise HTTPException(status_code=404, detail='Expense Not Found')
+
+    update_data = update_expense.model_dump(exclude_unset=True)
+
+    for key,value in update_data.items():
+        setattr(expense,key,value)
+
+    db.commit()
+    return JSONResponse(status_code=200, content={'message' : 'Expense updated successfully'})
 
 
 
