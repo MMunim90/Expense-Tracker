@@ -114,10 +114,16 @@ def update_expenses(user : user_dependency, db : db_dependency, expense_id: int,
 
 
 @app.delete("/delete-expenses/{expense_id}")
-def delete_expenses(expense_id: int):
-    data = load_data()
-    if expense_id not in data:
-        raise HTTPException(status_code=404, detail="Expense not found!!!")
-    del data[expense_id]
-    save_data(data)
-    raise HTTPException(status_code=200, detail="Expense deleted successfully!!!")
+def delete_expenses(user : user_dependency, db : db_dependency, expense_id: int):
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+
+    expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+
+    if expense is None:
+        raise HTTPException(status_code=404, detail='Expense Not Found')
+
+    db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).delete()
+
+    db.commit()
+    return JSONResponse(status_code=200, content={'message' : 'Expense deleted successfully'})
