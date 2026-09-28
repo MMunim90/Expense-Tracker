@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Path
 from typing import Annotated, Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -6,7 +6,7 @@ import models
 from models import Users, Expense
 from database import engine, SessionLocal
 from fastapi.responses import JSONResponse
-from router import auth, admin
+from router import auth
 from router.auth import get_current_user
 
 app = FastAPI()
@@ -31,7 +31,6 @@ class UpdateExpense(BaseModel):
 
 models.Base.metadata.create_all(bind=engine)
 app.include_router(auth.router)
-app.include_router(admin.router)
 
 def get_db():
     db = SessionLocal()
@@ -70,8 +69,11 @@ def view_specific_expenses(user : user_dependency, db : db_dependency, expense_i
     
     
 @app.get("/sort")
-def view_sorted_expenses(sorted_by: str, order: str):
-    data = load_data()
+def view_sorted_expenses(user : user_dependency, db : db_dependency, sorted_by: str, order: str):
+    if user is None:
+            raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+        
+    data = db.query(Expense).filter(Expense.owner_id == user.get('id')).all()
     sorted_data = list(data.values())
     if order == 'asc':
         sorted_data.sort(key = lambda x: x[sorted_by])
