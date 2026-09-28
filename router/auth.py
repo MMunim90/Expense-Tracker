@@ -13,7 +13,7 @@ from datetime import timedelta, datetime, timezone
 router = APIRouter()
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-OAuth2_bearer = OAuth2PasswordBearer(tokenUrl='login')
+OAuth2_bearer = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 SECRET_KEY = '3e459203b7177dfdb102a0a5a60718a5cde12ad36070f313777b928dbdb69e3a'
 ALGORITHM = 'HS256'
@@ -40,13 +40,13 @@ def authenticate_user(username, password, db):
 
     if user is None:
         return False
-    if bcrypt_context.verify(password, user.hash_password):
+    if bcrypt_context.verify(password, user.hashed_password):
         return user
     return False
 
 
-def create_access_token(username: str, user_id: int, user_role: str, expires_delta: timedelta):
-    encode = {"sub" : username, "id" : user_id, "role" : user_role}
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encode = {"sub" : username, "id" : user_id}
     expires = datetime.now(timezone.utc) + expires_delta
 
     encode.update({"exp" : expires})
@@ -59,12 +59,11 @@ def get_current_user(token: Annotated[str, Depends(OAuth2_bearer)]):
 
         username : str = payload.get('sub')
         user_id : int = payload.get('id')
-        user_role : str = payload.get('role')
 
         if username is None or user_id is None:
             raise HTTPException(status_code=404, detail='User Not Found!!!')
 
-        return {'username' : username, 'id' : user_id, 'role' : user_role}
+        return {'username' : username, 'id' : user_id}
     except:
         raise HTTPException(status_code=404, detail='User Not Found!!!')
 
@@ -79,17 +78,12 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.post('/create_user')
+@router.post('/auth/register')
 def create_user(db : db_dependency, new_user : CreateUsers):
     user_model = Users(
         email = new_user.email,
         username = new_user.username,
-        firstname = new_user.firstname,
-        lastname = new_user.lastname,
-        hash_password = bcrypt_context.hash(new_user.password),
-        is_active = True,
-        role = new_user.role,
-        phone_number = new_user.phone_number
+        hashed_password = bcrypt_context.hash(new_user.password)
     )
 
     db.add(user_model)
@@ -98,7 +92,7 @@ def create_user(db : db_dependency, new_user : CreateUsers):
     return JSONResponse(status_code=201, content={'message' : 'User created successfully!!!'})
 
 
-@router.post('/login')
+@router.post('/auth/login')
 def login_user(db : db_dependency, form_data : Annotated[OAuth2PasswordRequestForm, Depends()]):
 
     user = authenticate_user(form_data.username, form_data.password, db)
@@ -106,17 +100,17 @@ def login_user(db : db_dependency, form_data : Annotated[OAuth2PasswordRequestFo
     if not user:
         raise HTTPException(status_code=401, detail="Invalid Username or Password!!!")
 
-    token = create_access_token(user.username, user.id, user.role, timedelta(minutes=30))
+    token = create_access_token(user.username, user.id, timedelta(minutes=30))
 
     return {'access_token' : token, 'token_type' : 'bearer'}
 
 
 
-@router.put('/update_user')
+@router.put('/auth/update_user')
 def update_user(user : user_dependency, db : db_dependency, update_user : UpdateUser):
 
     if user is None:
-        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+        raise HTTPException(status_code=401, detail="User didnot logged in yet!!!")
 
     user = db.query(Users).filter(Users.id == user.get('id')).first()
 
@@ -130,7 +124,7 @@ def update_user(user : user_dependency, db : db_dependency, update_user : Update
 
 
 
-@router.put('/update_password')
+@router.put('/auth/update_password')
 def update_password(user : user_dependency, db : db_dependency, update_password : UpdatePassword):
 
     if user is None:
@@ -138,10 +132,10 @@ def update_password(user : user_dependency, db : db_dependency, update_password 
 
     user = db.query(Users).filter(Users.id == user.get('id')).first()
 
-    if not bcrypt_context.verify(update_password.current_password, user.hash_password):
+    if not bcrypt_context.verify(update_password.current_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Oops, Current password didnot match!!!")
 
-    user.hash_password = bcrypt_context.hash(update_password.new_password)
+    user.hashed_password = bcrypt_context.hash(update_password.new_password)
 
     db.add(user)
     db.commit()
