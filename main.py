@@ -1,36 +1,47 @@
-from fastapi import FastAPI, HTTPException, Path
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, Depends, HTTPException
 from typing import Annotated, Optional
-import json
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
+import models
+from models import Users, Expense
+from database import engine, SessionLocal
+from fastapi.responses import JSONResponse
+from router import auth, admin
+from router.auth import get_current_user
 
 app = FastAPI()
 
 class Expense(BaseModel):
-    id: Annotated[str, Field(..., description='Id of the expenses', example='E001')]
-    name: Annotated[str, Field(..., description='Name of the expenses', example='Lunch')]
-    amount: Annotated[int, Field(..., description='Amount of the expenses', example='500')]
+    id: Annotated[int, Field(..., description='Id of the expenses', example='1')]
+    title: Annotated[str, Field(..., description='Title of the expenses', example='Lunch')]
+    amount: Annotated[float, Field(..., description='Amount of the expenses', example='500')]
+    type: Annotated[str, Field(..., description='Type of the expenses', example='income')]
     category: Annotated[str, Field(..., description='Category of the expenses', example='Food')]
     date: Annotated[str, Field(..., description='Date of the expenses', example='2026-09-05')]
-    description: Annotated[str, Field(..., description='Description of the expenses', example='Lunch at Restaurant')]
 
 
 class UpdateExpense(BaseModel):
-    name: Annotated[Optional[str], Field(default=None)]
+    title: Annotated[Optional[str], Field(default=None)]
     amount: Annotated[Optional[int], Field(default=None)]
+    type: Annotated[Optional[str], Field(default=None)]
     category: Annotated[Optional[str], Field(default=None)]
     date: Annotated[Optional[str], Field(default=None)]
-    description: Annotated[Optional[str], Field(default=None)]
 
 
 
-def load_data():
-    with open('expenses.json', 'r') as f:
-        data = json.load(f)
-    return data
+models.Base.metadata.create_all(bind=engine)
+app.include_router(auth.router)
+app.include_router(admin.router)
 
-def save_data(data):
-    with open('expenses.json', 'w') as f:
-        json.dump(data, f)
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @app.get("/")
 def main():
@@ -38,17 +49,24 @@ def main():
 
 
 @app.get("/view")
-def view_expenses():
-    data = load_data()
-    return data
+def view_expenses(user : user_dependency, db : db_dependency):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+    
+    return db.query(Expense).filter(Expense.owner_id == user.get('id')).all()
 
 @app.get("/view/{expense_id}")
-def view_specific_expenses(expense_id: str = Path(..., description='Id of the expenses', example='E001')):
-    data = load_data()
-    if expense_id in data:
-        return data[expense_id]
+def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int = Path(..., description='Id of the expenses', example='1')):
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+    
+    specific_expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+
+    if specific_expense is not None:
+        return specific_expense
     else:
-        raise HTTPException(status_code=404, detail="Expenses not found!!!")
+        raise HTTPException(status_code=404, detail='Expense Not Found')
     
     
 @app.get("/sort")
@@ -74,7 +92,7 @@ def create_expenses(expense: Expense):
     
 
 @app.put("/edit-expenses/{expense_id}")
-def update_expenses(expense_id: str, expense: UpdateExpense):
+def update_expenses(expense_id: int, expense: UpdateExpense):
     data = load_data()
     if expense_id not in data:
         raise HTTPException(status_code=404, detail="Expense not found!!!")
@@ -85,7 +103,7 @@ def update_expenses(expense_id: str, expense: UpdateExpense):
 
 
 @app.delete("/delete-expenses/{expense_id}")
-def delete_expenses(expense_id: str):
+def delete_expenses(expense_id: int):
     data = load_data()
     if expense_id not in data:
         raise HTTPException(status_code=404, detail="Expense not found!!!")
