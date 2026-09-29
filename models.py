@@ -11,7 +11,7 @@ class Users(Base):
     hashed_password = Column(String)
     
     
-class Expense(Base):
+class Expenses(Base):
     __tablename__ = 'Expense'
 
     id = Column(Integer, primary_key=True, index=True)

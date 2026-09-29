@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 import models
-from models import Users, Expense
+from models import Users, Expenses
 from database import engine, SessionLocal
 from fastapi.responses import JSONResponse
 from router import auth
@@ -22,7 +22,7 @@ class Expense(BaseModel):
 
 class UpdateExpense(BaseModel):
     title: Annotated[Optional[str], Field(default=None)]
-    amount: Annotated[Optional[int], Field(default=None)]
+    amount: Annotated[Optional[float], Field(default=None)]
     type: Annotated[Optional[str], Field(default=None)]
     category: Annotated[Optional[str], Field(default=None)]
     date: Annotated[Optional[str], Field(default=None)]
@@ -53,14 +53,14 @@ def view_expenses(user : user_dependency, db : db_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
     
-    return db.query(Expense).filter(Expense.owner_id == user.get('id')).all()
+    return db.query(Expenses).filter(Expenses.owner_id == user.get('id')).all()
 
 @app.get("/transactions/{transaction_id}")
 def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int = Path(..., description='Id of the expenses', example='1')):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
     
-    specific_expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+    specific_expense = db.query(Expenses).filter(Expenses.owner_id == user.get('id')).filter(Expenses.id == expense_id).first()
 
     if specific_expense is not None:
         return specific_expense
@@ -87,7 +87,7 @@ def create_expenses(user : user_dependency, db : db_dependency, expense: Expense
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
 
-    expense_model = Expense(**expense.model_dump(), owner_id = user.get('id'))
+    expense_model = Expenses(**expense.model_dump(), owner_id = user.get('id'))
     db.add(expense_model)
     db.commit()
 
@@ -100,7 +100,7 @@ def update_expenses(user : user_dependency, db : db_dependency, expense_id: int,
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
 
-    expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+    expense = db.query(Expenses).filter(Expenses.owner_id == user.get('id')).filter(Expenses.id == expense_id).first()
 
     if expense is None:
         raise HTTPException(status_code=404, detail='Expense Not Found')
@@ -120,12 +120,12 @@ def delete_expenses(user : user_dependency, db : db_dependency, expense_id: int)
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
 
-    expense = db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).first()
+    expense = db.query(Expenses).filter(Expenses.owner_id == user.get('id')).filter(Expenses.id == expense_id).first()
 
     if expense is None:
         raise HTTPException(status_code=404, detail='Expense Not Found')
 
-    db.query(Expense).filter(Expense.owner_id == user.get('id')).filter(Expense.id == expense_id).delete()
+    db.query(Expenses).filter(Expenses.owner_id == user.get('id')).filter(Expenses.id == expense_id).delete()
 
     db.commit()
     return JSONResponse(status_code=200, content={'message' : 'Expense deleted successfully'})
