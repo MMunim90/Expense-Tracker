@@ -48,14 +48,15 @@ def main():
 
 
 @app.get("/transactions")
-def view_expenses(user : user_dependency, db : db_dependency):
+def view_all_expenses(user : user_dependency, db : db_dependency):
 
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
     
     return db.query(Expenses).filter(Expenses.owner_id == user.get('id')).all()
 
-@app.get("/transactions/{transaction_id}")
+
+@app.get("/transaction/{transaction_id}")
 def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
@@ -73,15 +74,25 @@ def view_sorted_expenses(user : user_dependency, db : db_dependency, type: str, 
     if user is None:
             raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
         
-    data = db.query(Expense).filter(Expense.owner_id == user.get('id')).all()
-    sorted_data = list(data.values())
-    if type == 'income':
-        sorted_data.sort(key = lambda x: x[category])
-    elif type == 'expense':
-        sorted_data.sort(key = lambda x: x[category], reverse=True)
-    else:
-        raise HTTPException(status_code=404, detail="Invaild Type!")
-    return sorted_data
+    income_categories = ["Salary", "Freelance"]
+
+    expense_categories = [
+        "Food",
+        "Transport",
+        "Grocery",
+        "Bills",
+        "Education"
+    ]
+    
+    if category not in income_categories and category not in expense_categories:
+        raise HTTPException(status_code=404, detail=f"Invalid category. Income options: {income_categories}, Expense options: {expense_categories}")
+    
+    if type not in ['income', 'expense']:
+        raise HTTPException(status_code=404, detail="Invalid type. Choose between income or expense")
+    
+    data = db.query(Expenses).filter(Expenses.owner_id == user.get('id'), Expenses.type == type, Expenses.category == category).all()
+    
+    return data
 
 
 @app.post("/transactions")
@@ -131,3 +142,13 @@ def delete_expenses(user : user_dependency, db : db_dependency, expense_id: int)
 
     db.commit()
     return JSONResponse(status_code=200, content={'message' : 'Expense deleted successfully'})
+
+
+
+@app.get('/user_profile')
+def get_user_profile(user : user_dependency, db : db_dependency):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
+    
+    return db.query(Users).filter(Users.id == user.get('id')).first()
