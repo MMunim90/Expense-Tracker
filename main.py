@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Path
+from fastapi import FastAPI, Depends, HTTPException
 from typing import Annotated, Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -56,7 +56,7 @@ def view_expenses(user : user_dependency, db : db_dependency):
     return db.query(Expenses).filter(Expenses.owner_id == user.get('id')).all()
 
 @app.get("/transactions/{transaction_id}")
-def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int = Path(..., description='Id of the expenses', example='1')):
+def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
     
@@ -69,16 +69,18 @@ def view_specific_expenses(user : user_dependency, db : db_dependency, expense_i
     
     
 @app.get("/transactions/filter")
-def view_sorted_expenses(user : user_dependency, db : db_dependency, sorted_by: str, order: str):
+def view_sorted_expenses(user : user_dependency, db : db_dependency, type: str, category: str):
     if user is None:
             raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
         
     data = db.query(Expense).filter(Expense.owner_id == user.get('id')).all()
     sorted_data = list(data.values())
-    if order == 'asc':
-        sorted_data.sort(key = lambda x: x[sorted_by])
+    if type == 'income':
+        sorted_data.sort(key = lambda x: x[category])
+    elif type == 'expense':
+        sorted_data.sort(key = lambda x: x[category], reverse=True)
     else:
-        sorted_data.sort(key = lambda x: x[sorted_by], reverse=True)
+        raise HTTPException(status_code=404, detail="Invaild Type!")
     return sorted_data
 
 
