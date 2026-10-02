@@ -47,7 +47,7 @@ def main():
     return "Expense Tracker Backend"
 
 
-@app.get("/transactions")
+@app.get("/all_transactions")
 def view_all_expenses(user : user_dependency, db : db_dependency):
 
     if user is None:
@@ -56,7 +56,7 @@ def view_all_expenses(user : user_dependency, db : db_dependency):
     return db.query(Expenses).filter(Expenses.owner_id == user.get('id')).all()
 
 
-@app.get("/transaction/{transaction_id}")
+@app.get("/specific_transaction/{expense_id}")
 def view_specific_expenses(user : user_dependency, db : db_dependency, expense_id: int):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
@@ -69,7 +69,7 @@ def view_specific_expenses(user : user_dependency, db : db_dependency, expense_i
         raise HTTPException(status_code=404, detail='Expense Not Found')
     
     
-@app.get("/transactions/filter")
+@app.get("/sort_transactions/filter")
 def view_sorted_expenses(user : user_dependency, db : db_dependency, type: str, category: str):
     if user is None:
             raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
@@ -95,7 +95,7 @@ def view_sorted_expenses(user : user_dependency, db : db_dependency, type: str, 
     return data
 
 
-@app.post("/transactions")
+@app.post("/create_transactions")
 def create_expenses(user : user_dependency, db : db_dependency, expense: Expense):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
@@ -108,7 +108,7 @@ def create_expenses(user : user_dependency, db : db_dependency, expense: Expense
     
     
 
-@app.put("/transactions/{transaction_id}")
+@app.put("/update_transactions/{expense_id}")
 def update_expenses(user : user_dependency, db : db_dependency, expense_id: int, update_expense: UpdateExpense):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
@@ -128,7 +128,7 @@ def update_expenses(user : user_dependency, db : db_dependency, expense_id: int,
 
 
 
-@app.delete("/transactions/{transaction_id}")
+@app.delete("/delete_transactions/{expense_id}")
 def delete_expenses(user : user_dependency, db : db_dependency, expense_id: int):
     if user is None:
         raise HTTPException(status_code=401, detail="User didnot loged in yet!!!")
